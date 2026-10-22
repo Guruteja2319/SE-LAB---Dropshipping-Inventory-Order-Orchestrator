@@ -1,3 +1,5 @@
+"""Manage tournament matches, team statistics, and league standings."""
+
 import os
 import random
 import tempfile
@@ -9,35 +11,67 @@ teams = {}
 matches = []
 
 
-def addTeam(teamName, players=[]):
-    teams[teamName] = {"played": 0, "won": 0, "drawn": 0, "lost": 0,
-                       "gf": 0, "ga": 0, "players": players}
+def add_team(team_name, players=None):
+    """Register a team with its initial statistics."""
+    if players is None:
+        players = []
+
+    teams[team_name] = {
+        "played": 0,
+        "won": 0,
+        "drawn": 0,
+        "lost": 0,
+        "gf": 0,
+        "ga": 0,
+        "players": players,
+    }
 
 
-def matchResult(homeGoals, awayGoals):
-    if homeGoals > awayGoals:
+def match_result(home_goals, away_goals):
+    """Determine the outcome of a match."""
+    if home_goals > away_goals:
         return "home"
-    elif homeGoals < awayGoals:
+
+    if home_goals < away_goals:
         return "away"
-    else:
-        return "draw"
+
+    return "draw"
 
 
-def recordMatch(home, away, homeGoals, awayGoals):
-    result = matchResult(homeGoals, awayGoals)
-    sides = ((home, homeGoals, awayGoals), (away, awayGoals, homeGoals))
+def record_match(home, away, home_goals, away_goals):
+    """Record a match and update both teams' statistics."""
+    if home not in teams or away not in teams:
+        raise ValueError("Both teams must be registered.")
+
+    if home == away:
+        raise ValueError("A team cannot play against itself.")
+
+    for score in (home_goals, away_goals):
+        if type(score) is not int or score < 0:
+            raise ValueError("Goals must be non-negative integers.")
+
+    result = match_result(home_goals, away_goals)
+    sides = (
+        (home, home_goals, away_goals),
+        (away, away_goals, home_goals),
+    )
+
     for team, scored, conceded in sides:
         teams[team]["played"] += 1
         teams[team]["gf"] += scored
         teams[team]["ga"] += conceded
+
     if result == "draw":
         teams[home]["drawn"] += 1
         teams[away]["drawn"] += 1
     else:
-        winner, loser = (home, away) if result == "home" else (away, home)
+        winner, loser = (
+            (home, away) if result == "home" else (away, home)
+        )
         teams[winner]["won"] += 1
         teams[loser]["lost"] += 1
-    matches.append((home, away, homeGoals, awayGoals))
+
+    matches.append((home, away, home_goals, away_goals))
 
 
 def points(teamName):
@@ -54,9 +88,9 @@ def leagueTable():
                   reverse=True)
 
 
-def isTopTwo(teamName):
-    table = leagueTable()
-    return teamName == table[0] or teamName == table[1]
+def is_top_two(team_name):
+    """Check whether a team is among the top two teams."""
+    return team_name in league_table()[:2]
 
 def toss_coin():
     """Return a cryptographically secure coin-toss result."""
