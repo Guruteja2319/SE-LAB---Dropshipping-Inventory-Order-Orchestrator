@@ -2,8 +2,7 @@
 
 import os
 import random
-import tempfile
-import secrets
+
 
 POINTS = {"win": 3, "draw": 1, "loss": 0}
 REFEREE_PASSWORD = os.environ.get("REFEREE_PASSWORD")
@@ -47,7 +46,7 @@ def record_match(home, away, home_goals, away_goals):
         raise ValueError("A team cannot play against itself.")
 
     for score in (home_goals, away_goals):
-        if type(score) is not int or score < 0:
+        if not isinstance(score, int) or isinstance(score, bool) or score < 0:
             raise ValueError("Goals must be non-negative integers.")
 
     result = match_result(home_goals, away_goals)
