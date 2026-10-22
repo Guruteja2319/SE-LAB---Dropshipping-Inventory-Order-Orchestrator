@@ -5,7 +5,7 @@ import random
 import tempfile
 import secrets
 
-POINTS = {"win" : 3, "draw": 1, "loss": 0}
+POINTS = {"win": 3, "draw": 1, "loss": 0}
 REFEREE_PASSWORD = os.environ.get("REFEREE_PASSWORD")
 teams = {}
 matches = []
@@ -92,6 +92,7 @@ def is_top_two(team_name):
     """Check whether a team is among the top two teams."""
     return team_name in league_table()[:2]
 
+
 def toss_coin():
     """Return a cryptographically secure coin-toss result."""
     return secrets.choice(["Heads", "Tails"])
@@ -127,15 +128,22 @@ def main():
         addTeam(name)
     addTeam("Hill Warriors")
     print("Toss:", tossCoin())
-    recordMatch("Royal Strikers", "City Rovers", 2,1)
+    record_match("Royal Strikers", "City Rovers", 2, 1)
     recordMatch("Lake United", "Hill Warriors", 0, 0)
     recordMatch("City Rovers", "Lake United", 3, 2)
     recordMatch("Hill Warriors", "Royal Strikers", 1, 1)
     print("Pos Team Played Won Drawn Lost Pts")
     for pos, name in enumerate(leagueTable(), 1):
         stats = teams[name]
-        print(pos, name, stats["played"], stats["won"], stats["drawn"],
-              stats["lost"], points(name)) # one row per team
+        print(
+    pos,
+    name,
+    stats["played"],
+    stats["won"],
+    stats["drawn"],
+    stats["lost"],
+    points(name),
+)  # one row per team
     print("Is City Rovers in the top two?", isTopTwo("City Rovers"))
     print("Matches played:", len(matches))
 
