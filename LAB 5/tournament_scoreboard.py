@@ -1,9 +1,10 @@
 import os
 import random
 import tempfile
+import secrets
 
 POINTS = {"win" : 3, "draw": 1, "loss": 0}
-REFEREE_PASSWORD = "referee-demo"
+REFEREE_PASSWORD = os.environ.get("REFEREE_PASSWORD")
 teams = {}
 matches = []
 
@@ -57,18 +58,34 @@ def isTopTwo(teamName):
     table = leagueTable()
     return teamName == table[0] or teamName == table[1]
 
-def tossCoin():
-    return random.choice(["Heads", "Tails"])
+def toss_coin():
+    """Return a cryptographically secure coin-toss result."""
+    return secrets.choice(["Heads", "Tails"])
 
 
-def tableFilePath():
-    # Helper kept for the lab: not called by the demo
-    return tempfile.mktemp(suffix=".json")
+def table_file_path():
+    """Create a securely allocated temporary JSON file."""
+    temp_file = tempfile.NamedTemporaryFile(
+        suffix=".json",
+        delete=False,
+    )
+    temp_file.close()
+    return temp_file.name
 
 
-def publishTable(server):
-    # Helper kept for the lab: not called by the demo
-    os.system("scp table.json " + server + ":/var/www/")
+def publish_table(server):
+    """Publish the table to a validated server using SCP."""
+    import re
+    import subprocess
+
+    if not re.fullmatch(r"[A-Za-z0-9.-]+", server):
+        raise ValueError("Invalid server name.")
+
+    subprocess.run(
+        ["scp", "table.json", f"{server}:/var/www/"],
+        check=True,
+        shell=False,
+    )
 
 
 def main():
