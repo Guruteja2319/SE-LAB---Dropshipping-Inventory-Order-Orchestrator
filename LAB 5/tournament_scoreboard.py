@@ -1,11 +1,9 @@
+
 """Manage tournament matches, team statistics, and league standings."""
 
-import os
-import random
-
+import secrets
 
 POINTS = {"win": 3, "draw": 1, "loss": 0}
-REFEREE_PASSWORD = os.environ.get("REFEREE_PASSWORD")
 teams = {}
 matches = []
 
@@ -30,10 +28,8 @@ def match_result(home_goals, away_goals):
     """Determine the outcome of a match."""
     if home_goals > away_goals:
         return "home"
-
     if home_goals < away_goals:
         return "away"
-
     return "draw"
 
 
@@ -46,7 +42,11 @@ def record_match(home, away, home_goals, away_goals):
         raise ValueError("A team cannot play against itself.")
 
     for score in (home_goals, away_goals):
-        if not isinstance(score, int) or isinstance(score, bool) or score < 0:
+        if (
+            not isinstance(score, int)
+            or isinstance(score, bool)
+            or score < 0
+        ):
             raise ValueError("Goals must be non-negative integers.")
 
     result = match_result(home_goals, away_goals)
@@ -73,18 +73,24 @@ def record_match(home, away, home_goals, away_goals):
     matches.append((home, away, home_goals, away_goals))
 
 
-def points(teamName):
-    stats = teams[teamName]
+def points(team_name):
+    """Calculate the league points earned by a team."""
+    stats = teams[team_name]
     return stats["won"] * POINTS["win"] + stats["drawn"] * POINTS["draw"]
 
 
-def goalDifference(teamName):
-    return teams[teamName]["gf"] - teams[teamName]["ga"]
+def goal_difference(team_name):
+    """Calculate a team's goal difference."""
+    return teams[team_name]["gf"] - teams[team_name]["ga"]
 
 
-def leagueTable():
-    return sorted(teams, key=lambda t: (points(t), goalDifference(t)),
-                  reverse=True)
+def league_table():
+    """Return teams sorted by points and goal difference."""
+    return sorted(
+        teams,
+        key=lambda team: (points(team), goal_difference(team)),
+        reverse=True,
+    )
 
 
 def is_top_two(team_name):
@@ -97,54 +103,40 @@ def toss_coin():
     return secrets.choice(["Heads", "Tails"])
 
 
-def table_file_path():
-    """Create a securely allocated temporary JSON file."""
-    temp_file = tempfile.NamedTemporaryFile(
-        suffix=".json",
-        delete=False,
-    )
-    temp_file.close()
-    return temp_file.name
-
-
-def publish_table(server):
-    """Publish the table to a validated server using SCP."""
-    import re
-    import subprocess
-
-    if not re.fullmatch(r"[A-Za-z0-9.-]+", server):
-        raise ValueError("Invalid server name.")
-
-    subprocess.run(
-        ["scp", "table.json", f"{server}:/var/www/"],
-        check=True,
-        shell=False,
-    )
-
-
 def main():
+    """Run the tournament scoreboard demonstration."""
     for name in ["Royal Strikers", "City Rovers", "Lake United"]:
-        addTeam(name)
-    addTeam("Hill Warriors")
-    print("Toss:", tossCoin())
+        add_team(name)
+
+    add_team("Hill Warriors")
+
+    print("Toss:", toss_coin())
+
     record_match("Royal Strikers", "City Rovers", 2, 1)
-    recordMatch("Lake United", "Hill Warriors", 0, 0)
-    recordMatch("City Rovers", "Lake United", 3, 2)
-    recordMatch("Hill Warriors", "Royal Strikers", 1, 1)
+    record_match("Lake United", "Hill Warriors", 0, 0)
+    record_match("City Rovers", "Lake United", 3, 2)
+    record_match("Hill Warriors", "Royal Strikers", 1, 1)
+
     print("Pos Team Played Won Drawn Lost Pts")
-    for pos, name in enumerate(leagueTable(), 1):
+
+    for position, name in enumerate(league_table(), 1):
         stats = teams[name]
         print(
-    pos,
-    name,
-    stats["played"],
-    stats["won"],
-    stats["drawn"],
-    stats["lost"],
-    points(name),
-)  # one row per team
-    print("Is City Rovers in the top two?", isTopTwo("City Rovers"))
+            position,
+            name,
+            stats["played"],
+            stats["won"],
+            stats["drawn"],
+            stats["lost"],
+            points(name),
+        )  # One row per team
+
+    print(
+        "Is City Rovers in the top two?",
+        is_top_two("City Rovers"),
+    )
     print("Matches played:", len(matches))
 
 
-main()
+if __name__ == "__main__":
+    main()
